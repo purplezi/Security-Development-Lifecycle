@@ -5,11 +5,12 @@
     <title>XSS攻击</title>
 </head>
 <body>
+        
+    {{data}} <br>
     <form method="GET">
         <input name="text" id="te">
         <input type="submit">
     </form>
-        <a href="{{data}}" id="link">Click Me</a>
-        
+    <a href="{{data}}" id="link">Click Me</a>
 </body>
 </html>
