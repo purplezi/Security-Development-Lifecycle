@@ -11,7 +11,7 @@
 2. `chromedriver.exe`；
 3. 机器人模拟的`robot.py`代码。
 
-## 3 相关概念
+## 3 实验原理
 
 XSS：`Cross Site Scripting`跨站脚本，Web前端漏洞。当用户浏览器渲染HTML文档的过程中，出现了不被预期的脚本指令并执行。
 
