@@ -166,6 +166,10 @@ XSS：`Cross Site Scripting`跨站脚本，Web前端漏洞。当用户浏览器�
 
 ### 4.4 其他平台的xss漏洞攻击
 
+- `kali`虚拟机下php代码的触发
+  
+  <img src="../SDL-0x02-静态网页&#32;&&#32;动态网页/imgs/phpxss.gif">
+  
 - `Juiceshop`上的Domxss攻击
   
   <img src="imgs/DOMxss.gif" width=80%>
