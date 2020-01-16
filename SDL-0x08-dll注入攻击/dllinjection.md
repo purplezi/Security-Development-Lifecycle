@@ -16,6 +16,17 @@
 
 ## 3 实验原理
 
+- definition
+  > DLL injection is the process of inserting code into a running process. 
+  > The code we usually insert is in the form of a dynamic link library (DLL)
+- four steps
+  > 1.**Attach** to the process
+  > 2.**Allocate** Memory within the process
+  > 3.**Copy** the DLL or the DLL Path into the processes memory and determine appropriate memory addresses
+  > 4.Instruct the process to **Execute** your DLL
+
+  <img src="imgs/dllinjection.png" width=70%>
+
 ## 4 实验过程
 
 ### 4.1 dll的编写
@@ -212,6 +223,7 @@
 
 - 运行32位的Notepad
 - 以管理员身份运行`dllinject.c`生成的`dllinject.exe`可执行程序，发现打开notepad.exe的时候会弹窗，证明dll已经注入到notepad.exe中。
+  
   <img src="imgs/dllinjection.gif">
   
 ## 5 实验问题以及解决
@@ -222,8 +234,23 @@
 
 ## 6 实验总结
 
+- 应用程序一般使用dll注入技术来
+  - 为目标进程添加新的“实用”功能
+  - 需要一些手段来辅助调试被注入dll的进程
+  - 为目标进程安装钩子程序(API Hook)
+- 注入技术
+  |名称|方法|
+  |---|---|
+  |修改注册表|修改`AppInit_DLLs`和`LoadAppInit_DLLs`|
+  |`CreateRemoteThread`函数|在目标进程中创建一个线程并在线程中执行LoadLibrary函数加载要注入的dll|
+  |`SetWindowsHookEx`函数|消息钩子，对程序挂钩(HOOK)迫使程序加载dll|
+  |木马dll|确认目标进程一定会载入的dll，然后替换掉它|
+  |使用调试器注入dll|调试器可以在被调试进程中执行很多特殊操作，操作系统载入一个被调试程序的时候，会在被调试的主线程尚未开始执行任何代码前，自动通知调试器(用来调试被调试进程的进程)，此时调试器可以将一些代码注入到被调试进程的地址空间中|
+  |`CreateProcess`函数对子进程注入dll|要求目标进程是注入者进程的子进程，当使用CreateProcess函数来创建一个子进程时，可以选择创建后立即挂起该进程，目的地修改EIP的值让其从另一个位置继续执行|
 
 ## 7 参考资料
 
 - [DllMain教程](https://docs.microsoft.com/zh-cn/windows/win32/dlls/dynamic-link-library-entry-point-function)
 - [dllinjection教程](https://github.com/fdiskyou/injectAllTheThings)
+- [Windows DLL Injection Basics](https://vulnerablelife.wordpress.com/2017/01/12/windows-dll-injection-basics/)
+- [Windows系统的dll注入](https://www.cnblogs.com/wf751620780/p/10730013.html)
