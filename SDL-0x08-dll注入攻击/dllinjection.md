@@ -20,9 +20,9 @@
   > DLL injection is the process of inserting code into a running process. 
   > The code we usually insert is in the form of a dynamic link library (DLL)
 - four steps
-  > 1.**Attach** to the process
-  > 2.**Allocate** Memory within the process
-  > 3.**Copy** the DLL or the DLL Path into the processes memory and determine appropriate memory addresses
+  > 1.**Attach** to the process <br>
+  > 2.**Allocate** Memory within the process <br>
+  > 3.**Copy** the DLL or the DLL Path into the processes memory and determine appropriate memory addresses <br>
   > 4.Instruct the process to **Execute** your DLL
 
   <img src="imgs/dllinjection.png" width=70%>
@@ -90,6 +90,7 @@
         lib_function
     ```
 - 右键项目，选择`重新生成`，寻找新生成的`baselib.dll`的位置(通过生成时间判断)，一般位于整个解决项目的`Debug`目录下，用于后面的步骤。
+  
   <img src="imgs/rebuild.png" width=70%>
 
 ### 4.2 远程线程劫持方式
