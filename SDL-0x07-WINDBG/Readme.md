@@ -18,7 +18,7 @@
   - WinDBG 早年是一个单独的工具，后来被包含到了 Windows SDK 中并且不再提供单独下载，根据官方文档你需要下载 Windows SDK 的 ISO 镜像并选择**仅安装 WinDBG**。
   - [Windows 7 SDK 在线安装程序](https://www.microsoft.com/en-us/download/details.aspx?id=8279)，在主机下载后，通过共享文件夹从主机共享到虚拟机，在虚拟机安装(一直下一步就行)，成功安装的截图如下。
     
-    <img src="imgs/windbginstall.png" width=70%>
+    <img src="imgs/windbginstall.png" width=90%>
 
 ### 3.2 WinDBG的基本使用
 
@@ -40,6 +40,7 @@
     |x|查看模块符号|
     |bu|下断点|
     |bl|列出断点|
+    |bc *|清除所有断点/某个序号的断点|
     |g|继续执行程序|
     |k|查看调用堆栈|
     |lm|列出当前进程加载的模块|
@@ -47,6 +48,21 @@
 ### 3.3 WinDBG脚本实验
 
 #### 3.3.1 修改记事本
+
+
+- 在WinDBG的命令输入窗口输入下面的脚本命令，即每次保存后都会打印出`hello`。
+  ```bash
+  bu kernel32!writefile ".echo hello;g"
+  # 我用这个命令成功 说明32位 win7下notepad调用的是kernel32.dll下的WriteFile
+  # 大小写不敏感
+
+  # 有的notepad调用的是KERNELBASE.dll下的WriteFile
+  bu kernelbase!writefile ".echo hello;g" 
+  ```
+  
+  <img src="imgs/echohello.png" width=90%>
+
+  <img src="imgs/echohello.gif">
 
 - 在win7 虚拟机的桌面新建`command.txt`，内容如下：
     ```
@@ -60,16 +76,26 @@
     as 用于起别名
     /ma 将别名的等价值设置为从地址Address开始的null结尾的ASCII字符串
     /mu 将别名的等价值设置为从地址Address开始的null结尾的Unicode字符串
-    ea 地址 "abc" 表示在0x445634地址写入Ascii字符串abc 不包含结束符0
-    eza 地址 "abc" 表示在0x445634地址写入Ascii字符串abc 包含结束符0
-    eu 地址 "abc" 表示在0x445634地址写入Unicode字符串abc 不包含结束符0
-    ezu 地址 "abc" 表示在0x445634地址写入Unicode字符串abc 包含结束符0
+    ea 地址 "abc" 表示在地址写入Ascii字符串abc 不包含结束符0
+    eza 地址 "abc" 表示在地址写入Ascii字符串abc 包含结束符0
+    eu 地址 "abc" 表示在地址写入Unicode字符串abc 不包含结束符0
+    ezu 地址 "abc" 表示在地址写入Unicode字符串abc 包含结束符0
     ```
+    - 通过键入命令触发
+        ```bash
+        bu kernelbase!writefile "$$><C:\\Users\\zizi\\Desktop\\command.txt"
 
+        # "$>< 引入脚本文件
+        ```
+    - 验证地址为`esp+0n24`的方法
+        ```bash
+        
+        ```
 
 #### 3.3.2 修改计算器
 
 - 计算偏移地址
+  - dd查看内存内容
 - 在win7 虚拟机的桌面新建`command.txt`，内容如下：
     ```
     as /mu content poi(esp+8)
@@ -82,13 +108,13 @@
 1. 安装WinDBG的问题
    原因是使用了不同版本的Windows SDK(Soft Development Kit)，包含了开发该Windows版本所需的开发该windows版本所需的windows函数和常数定义、API函数说明文档、相关工具和示例。
    
-   <img src="imgs/windbgerror.png" width=70%>
+   <img src="imgs/windbgerror.png" width=90%>
 
-2. `.reload`的时候出错
+2. [ 未解决 ] 符号表载入出错
    
-   <img src="imgs/symbolerror.png" width=70%>
+   <img src="imgs/symbolerror.png" width=90%>
 
-   - 原因：没有载入符号表？
+
 
 ## 5 参考文档
 
