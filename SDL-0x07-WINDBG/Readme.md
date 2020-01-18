@@ -47,8 +47,23 @@
 
 ### 3.3 WinDBG脚本实验
 
-#### 3.3.1 修改记事本
+- **脚本**：一系列的调试命令组合而成的文本文件
+- **调试脚本**：用户实现自动化的调试和修改程序执行流程
+  
+  |命令| 文件名包含分号 | 其他命令相连	| 缩短命令为一行 |允许传递参数|
+  |--- | ------------ | ----------- | ------------- | --------- | 
+  |$<  | 是 | 否 | 否 | 否 |
+  |$>< | 是	| 否 | 是 | 否 |
+  |$$< |否	| 是 | 否 | 否 |
+  |$$><	|否	| 是 | 是 | 否 |
+  |$$>a< | 否 |	是 | 是 | 是 |
 
+  ```
+  < 保留原有格式
+  >< 指令变成一行 换行符用;替代
+  ```
+
+#### 3.3.1 修改记事本
 
 - 在WinDBG的命令输入窗口输入下面的脚本命令，即每次保存后都会打印出`hello`。
   ```bash
@@ -64,14 +79,24 @@
 
   <img src="imgs/echohello.gif">
 
+  - 将上述命令修改为脚本文件，并且调用，能够得到相同结果。
+    ```bash
+    # 脚本文件
+    .echo hello
+    g
+    # 调用方法
+    bu kernelbase!writefile "$><脚本文件的路径"
+    # 注意路径需要\\
+    ```
+
 - 在win7 虚拟机的桌面新建`command.txt`，内容如下：
     ```
-    as /mu content poi(esp+0n24)
-    .block{.if($scmp("${content}","123456")==0){ezu poi(esp+0n24) "hacked";}.else{.echo content}}
+    as /mu content poi(esp+0n12)
+    .block{.if($scmp("${content}","123456")==0){ezu poi(esp+0n12) "hacked";}.else{.echo content}}
     g
 
     # 以下为相关解释
-    esp+0n24：记事本写入信息的起始位置
+    esp+0n12：记事本写入信息的起始位置
     poi用于获取地址中的内容
     as 用于起别名
     /ma 将别名的等价值设置为从地址Address开始的null结尾的ASCII字符串
@@ -80,22 +105,36 @@
     eza 地址 "abc" 表示在地址写入Ascii字符串abc 包含结束符0
     eu 地址 "abc" 表示在地址写入Unicode字符串abc 不包含结束符0
     ezu 地址 "abc" 表示在地址写入Unicode字符串abc 包含结束符0
+
+    block 将该代码块放在一起content才能正确执行
     ```
     - 通过键入命令触发
         ```bash
         bu kernelbase!writefile "$$><C:\\Users\\zizi\\Desktop\\command.txt"
-
-        # "$>< 引入脚本文件
         ```
-    - 验证地址为`esp+0n24`的方法
+    - 验证地址为`esp+0n12`的方法
+      - Writefile的参数为
         ```bash
+        BOOL WriteFile(
+            HANDLE       hFile,
+            LPCVOID      lpBuffer,
+            DWORD        nNumberOfBytesToWrite,
+            LPDWORD      lpNumberOfBytesWritten,
+            LPOVERLAPPED lpOverlapped
+        );
+        ```
+      - 栈帧的形成
+      - 下断点(无需引入外部脚本文件)，验证
+        ```bash
+        dd 地址
+        查看该地址上的内容
+        此处获得的是lpBuffer指针，所以还要dd该指针
         
+        poi(地址)
         ```
 
 #### 3.3.2 修改计算器
 
-- 计算偏移地址
-  - dd查看内存内容
 - 在win7 虚拟机的桌面新建`command.txt`，内容如下：
     ```
     as /mu content poi(esp+8)
