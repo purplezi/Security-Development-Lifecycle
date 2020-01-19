@@ -8,7 +8,8 @@
 ## 2 实验目的
 
 1. 熟悉WinDBG的使用和一些常用命令。
-2. 请修改 32 位 Windows 7 下的计算器的显示过程，使得当你输入的内容是特定数字如 "999" 的时候通过调试器脚本自动改为 "666"。
+2. 修改 32 位 Windows 7 下的记事本的显示过程，输入123456被保存为hacked。
+3. 修改 32 位 Windows 7 下的计算器的显示过程，使得当你输入的内容是特定数字如 "999" 的时候通过调试器脚本自动改为 "666"。
 
 ## 3 实验过程
 
@@ -25,11 +26,15 @@
 - 调试时所需：**源代码**和**符号文件(pdb文件)**
 - 32位 win7 离线符号表
 - 打开可执行文件`File -> Open Executable`(出现int3后，表示已经打开完成)，在`file->Symbol search path`选择符号文件所在的文件夹(不要直接选择符号文件)
-  - 在vs2019下编写`hello world`的.c文件，生成exe后放入win7 虚拟机
-  - 将同目录下的pdb也放入win7虚拟机
-    
+  - 在vs2019下编写`hello world`的.c文件，生成exe后放入win7虚拟机
+  - 将同目录下的pdb也放入win7虚拟机 
 - 选择`attach to a Process`，即可看到本机所有的进程信息，选择要调试的进程。
-- 安装windows符号文件`.pdb`文件 使用Windows符号表服务器
+- 安装windows符号文件`.pdb`文件，使用Windows符号表服务器
+  ```bash
+  .sympath srv*
+  .sympath srv*https://msdl.microsoft.com/download/symbols
+  .sympath srv*C:\MyServerSymbols*https://msdl.microsoft.com/download/symbols
+  ```
 - 指令集
   
     |指令|作用|
@@ -91,12 +96,17 @@
 
 - 在win7 虚拟机的桌面新建`command.txt`，内容如下：
     ```
-    as /mu content poi(esp+0n12)
-    .block{.if($scmp("${content}","123456")==0){ezu poi(esp+0n12) "hacked";}.else{.echo content}}
+    as /mu content poi(esp+0n08)
+    .block{.if($scmp("${content}","123456")==0){ezu poi(esp+0n08) "hacked";}.else{.echo content}}
+    g
+
+    # 若直接用记事本保存，不选择保存为utf8，则应该用如下指令，否则会出现乱码
+    as /ma content poi(esp+0n08)
+    .block{.if($scmp("${content}","123456")==0){eza poi(esp+0n08) "hacked";}.else{.echo content}}
     g
 
     # 以下为相关解释
-    esp+0n12：记事本写入信息的起始位置
+    esp+0n08：记事本写入信息的起始位置
     poi用于获取地址中的内容
     as 用于起别名
     /ma 将别名的等价值设置为从地址Address开始的null结尾的ASCII字符串
@@ -108,11 +118,14 @@
 
     block 将该代码块放在一起content才能正确执行
     ```
-    - 通过键入命令触发
+    - 通过键入下断点命令，触发。当输入`123456`保存后，再次打开，发现内容变为`hacked`。
         ```bash
-        bu kernelbase!writefile "$$><C:\\Users\\zizi\\Desktop\\command.txt"
+        bu kernel32!writefile "$$><C:\\Users\\zizi\\Desktop\\command.txt"
         ```
-    - 验证地址为`esp+0n12`的方法
+
+        <img src="imgs/123456tohacked.gif">
+
+    - 验证地址为`esp+0n08`的方法
       - Writefile的参数为
         ```bash
         BOOL WriteFile(
@@ -123,8 +136,11 @@
             LPOVERLAPPED lpOverlapped
         );
         ```
-      - 栈帧的形成
-      - 下断点(无需引入外部脚本文件)，验证
+      - 栈帧的形成。
+
+        <img src="imgs/stackframe.png" width=90%>
+
+      - 下断点(无需引入外部脚本文件)，验证地址。
         ```bash
         dd 地址
         查看该地址上的内容
@@ -132,15 +148,38 @@
         
         poi(地址)
         ```
+        通过尝试获取`esp`后面的地址，看哪一个地址是指向`lpBuffer`的指针。
+
+        <img src="imgs/espaddress.png" width=90%>
+
+        通过`dd poi(esp+0n08)`查看该地址下的内容。
+        
+        <img src="imgs/esp+0n08.png" width=90%>
 
 #### 3.3.2 修改计算器
 
+- 下断点调试，由于计算器显示的时候调用的是`SetWindowText`函数，所以我们需要修改该函数的输出。
+  ```c
+  BOOL SetWindowText( 
+    HWND hWnd, 
+    LPCTSTR lpString ); 
+  ```
+  - 栈帧的形成。
+    
+    <img src="imgs/calcstackframe.png" width=90%>
+
+  - `lpString`的地址为`esp+0n08`。
 - 在win7 虚拟机的桌面新建`command.txt`，内容如下：
-    ```
-    as /mu content poi(esp+8)
-    .block{.if($scmp("${content}","999")==0){ezu poi(esp+8) "666";}.else{.echo content}}
+    ```bash
+    as /mu content poi(esp+0n08)
+    .block{.if($scmp("${content}","999")==0){ezu poi(esp+0n08) "666";}.else{.echo content}}
     g
     ```
+- 通过键入下断点命令，触发。
+  ```bash
+  bu user32!SetWindowTextW "$><C:\\Users\\zizi\\Desktop\\command.txt"
+  ```
+  <img src="imgs/calc666to999.gif">
 
 ## 4 实验总结 
 
@@ -153,7 +192,11 @@
    
    <img src="imgs/symbolerror.png" width=90%>
 
-
+   - 解决：载入离线符号表，在查资料的过程中，貌似发现windows要弃用符号表。
+  
+3. 注意编码问题
+   
+   <img src="imgs/encode.png" width=90%>
 
 ## 5 参考文档
 
