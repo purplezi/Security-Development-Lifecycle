@@ -76,7 +76,7 @@
   # 我用这个命令成功 说明32位 win7下notepad调用的是kernel32.dll下的WriteFile
   # 大小写不敏感
 
-  # 有的notepad调用的是KERNELBASE.dll下的WriteFile
+  # 64位 win7 的notepad调用的是KERNELBASE.dll下的WriteFile
   bu kernelbase!writefile ".echo hello;g" 
   ```
   
