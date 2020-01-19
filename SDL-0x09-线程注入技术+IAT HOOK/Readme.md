@@ -2,7 +2,7 @@
 
 ## 1 实验要求
 
-**线程注入技术和IAT HOOK综合运用，实现对系统中进程的修改**。以**API hook**的方式进行，选下列任务其一完成
+**线程注入技术和IAT HOOK综合运用，实现对系统中进程的修改**。以**API hook**的方式进行，选下列任务其一完成，此处选择**hook notepad writefile**。
 - 「 hook notepad writefile 」实现向notepad中写入`haha`保存后，再打开显示`hehe`。
   - 注意：hook writefile之前要先调用createfile。
   - 把writefile的功能，写成dll，把这个dll注入到notepad的进程中，远程线程注入。
@@ -580,8 +580,8 @@
 
 ### 4.2 Fake WriteFile
 
-- 仿照上面的Fake MessageBox过程，修改`main.c`。
-  - 根据[writefile的MSDN官方文档](https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile)修改。已知`WriteFile`位于`Kernel32.dll`下。
+- 仿照上面的Fake MessageBox过程。
+  - 根据[writefile的MSDN官方文档](https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile)修改。已知`WriteFile`位于`Kernel32.dll`或者`hernelbase.dll`下。
     ```c
     #include <Windows.h>
     LONG IATHook
@@ -714,11 +714,44 @@
   
     <img src="imgs/vsproperties.png" width=70%>
   - 右键项目重新生成代码，找到生成的dll的路径。
-- 调用[SDL-0x08的远程线程劫持程序](../SDL-0x08-dll注入攻击/dllinject.c)，将dll的路径修改为上一步生成的dll的路径，运行结果如下。
+- 调用[SDL-0x08的远程线程劫持程序](../SDL-0x08-dll注入攻击/dllinject.c)，将dll的路径修改为上一步生成的dll的路径，路径如下。
+  
+  <img src="imgs/dlladdress.png" width=90%>
+  
+- 用`windbg`查看dll注入成功，但是不能代表能够调用运行成功。
+  
+  <img src="imgs/windbg.png" width=90%>
+
+- 无法成功显示的原因：**没有hook成功**
+  - 通过`windbg`调试发现，就算是自己编写的dll已经注入到程序中，仍旧调用的是`kernelbase.dll`下的`writefile`函数，无法调用自己编写的`baselib.dll`中的函数。
+  - 调用栈的查看
+    ```bash
+    [~Thread] k[b|p|P|v] [c] [n] [f] [L] [M] [FrameCount]
+    [~Thread] k[b|p|P|v] [c] [n] [f] [L] [M] = BasePtr [FrameCount]
+    [~Thread] k[b|p|P|v] [c] [n] [f] [L] [M] = BasePtr StackPtr InstructionPtr
+    [~Thread] kd [WordCount]
+    
+    # Thread  指定显示哪个线程的调用堆栈。如果省略该参数，则显示当前线程的调用堆栈。*显示所有线程的调用堆栈
+    # b  显示每个函数的前3个参数
+    # p  显示每个函数的所有参数。参数列表包括每个参数的类型、名称、值
+    # P  类似p。不同之处在于，每个参数显示在单独的行上面
+    # n  显示调用堆栈中每帧的序号（一般称栈帧）
+
+    .frame [/c] [/r] [FrameNumber] 
+    # /r  显示执行该帧时寄存器的值
+    # FrameNumber  指定要切换到的帧号。
+    ```
+
+    <img src="imgs/stackframe.png" width=90%>
+
+  - 调用栈证明：如果hook成功，在调用正确的`writefile`函数前应该会调用一次`fake_writefile`函数。
   
 ## 5 实验总结
 
 - 无法实现修改原因
+  - dll的路径不对，一定是dll的绝对路径
+  - 没有`hook`上
+  - `notepad.exe`是ASLR(地址空间配置随机加载)，`LoadLibraryA(动态载入dll)`在每一个进程的地址都不同，而我们的测试程序的地址无法做到。
 
 ## 6 参考资料
 
